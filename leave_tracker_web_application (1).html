@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tech Support - Leave Credits Tracker & Editor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .drawer-slide {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 font-sans antialiased">
+
+    <!-- Header Navigation -->
+    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-3">
+                    <span class="p-2 bg-emerald-500/20 text-emerald-400 rounded-lg">
+                        <i class="fa-solid fa-square-poll-vertical"></i>
+                    </span>
+                    TECH SUPPORT - LEAVE CREDITS TRACKER
+                </h1>
+                <p class="text-slate-400 text-xs sm:text-sm mt-0.5">Real-time leave balance management, quick count editing & reason logging</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="switchTab('tracker')" id="btnTabTracker" class="px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-indigo-600 text-white shadow-sm flex items-center gap-2 transition">
+                    <i class="fa-solid fa-table"></i> Tracker Sheet
+                </button>
+                <button onclick="switchTab('history')" id="btnTabHistory" class="px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 flex items-center gap-2 transition">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Leave History Logs
+                </button>
+                <button onclick="openAddEmployeeModal()" class="px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm flex items-center gap-2 transition">
+                    <i class="fa-solid fa-user-plus"></i> New Employee
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Metrics Overview Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Roster</p>
+                    <h3 id="stat-total-emp" class="text-2xl font-bold text-slate-800 mt-0.5">0</h3>
+                    <p class="text-[11px] text-slate-500 mt-1">Active Tech Support</p>
+                </div>
+                <div class="p-3 bg-slate-100 rounded-lg text-slate-600">
+                    <i class="fa-solid fa-users-gear text-xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Vacation Leave (VL)</p>
+                    <h3 id="stat-vl-total" class="text-2xl font-bold text-emerald-700 mt-0.5">0 / 0</h3>
+                    <p class="text-[11px] text-emerald-600 mt-1"><span id="stat-vl-bal">0</span> days total balance</p>
+                </div>
+                <div class="p-3 bg-emerald-50 rounded-lg text-emerald-600">
+                    <i class="fa-solid fa-umbrella-beach text-xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-amber-600 uppercase tracking-wider">Sick Leave (SL)</p>
+                    <h3 id="stat-sl-total" class="text-2xl font-bold text-amber-700 mt-0.5">0 / 0</h3>
+                    <p class="text-[11px] text-amber-600 mt-1"><span id="stat-sl-bal">0</span> days total balance</p>
+                </div>
+                <div class="p-3 bg-amber-50 rounded-lg text-amber-600">
+                    <i class="fa-solid fa-notes-medical text-xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-rose-600 uppercase tracking-wider">Emergency Leave (EL)</p>
+                    <h3 id="stat-el-total" class="text-2xl font-bold text-rose-700 mt-0.5">0 / 0</h3>
+                    <p class="text-[11px] text-rose-600 mt-1"><span id="stat-el-bal">0</span> days total balance</p>
+                </div>
+                <div class="p-3 bg-rose-50 rounded-lg text-rose-600">
+                    <i class="fa-solid fa-kit-medical text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- TRACKER TAB VIEW -->
+        <div id="tabViewTracker" class="space-y-4">
+            
+            <!-- Search & Filters -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                    <div class="relative w-full sm:w-72">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="searchInput" oninput="renderTable()" placeholder="Search name or EMP ID..." class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <select id="roleFilter" onchange="renderTable()" class="w-full sm:w-48 border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="ALL">All Team Roles</option>
+                        <option value="SUPERVISOR">Supervisor</option>
+                        <option value="LEAD">Lead</option>
+                        <option value="LOT">LOT</option>
+                        <option value="WORKFORCE">Workforce Lead</option>
+                        <option value="TRAINEE">Trainee</option>
+                        <option value="NORMAL">Standard Support</option>
+                    </select>
+                </div>
+                
+                <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+                    <button onclick="resetData()" class="text-slate-500 hover:text-rose-600 text-xs font-medium px-3 py-2 border border-slate-200 hover:border-rose-300 rounded-lg transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-rotate-left"></i> Reset Data
+                    </button>
+                </div>
+            </div>
+
+            <!-- Spreadsheet Grid Table View -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-900 text-white font-bold uppercase tracking-wider text-[11px]">
+                                <th class="p-3 border-b border-slate-800 text-center w-16">EMP NO</th>
+                                <th class="p-3 border-b border-slate-800 min-w-[220px]">Employee Name</th>
+                                <!-- VL -->
+                                <th colspan="2" class="p-2 border-b border-slate-800 bg-emerald-800/90 text-center border-l border-slate-700">VL (Vacation Leave) [6]</th>
+                                <!-- SL -->
+                                <th colspan="2" class="p-2 border-b border-slate-800 bg-amber-800/90 text-center border-l border-slate-700">SL (Sick Leave) [6]</th>
+                                <!-- EL -->
+                                <th colspan="2" class="p-2 border-b border-slate-800 bg-rose-800/90 text-center border-l border-slate-700">EL (Emergency Leave) [5]</th>
+                                <!-- Action -->
+                                <th class="p-3 border-b border-slate-800 text-center w-28">Actions</th>
+                            </tr>
+                            <tr class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200 text-[10px] uppercase">
+                                <th class="p-2"></th>
+                                <th class="p-2"></th>
+                                <th class="p-2 text-center bg-emerald-50 text-emerald-800 border-l border-slate-200 w-20">USE</th>
+                                <th class="p-2 text-center bg-emerald-100/60 text-emerald-900 w-20">BALANCE</th>
+                                <th class="p-2 text-center bg-amber-50 text-amber-800 border-l border-slate-200 w-20">USE</th>
+                                <th class="p-2 text-center bg-amber-100/60 text-amber-900 w-20">BALANCE</th>
+                                <th class="p-2 text-center bg-rose-50 text-rose-800 border-l border-slate-200 w-20">USE</th>
+                                <th class="p-2 text-center bg-rose-100/60 text-rose-900 w-20">BALANCE</th>
+                                <th class="p-2 text-center">Edit / Log</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employeeTableBody" class="divide-y divide-slate-200 text-slate-700 font-medium">
+                            <!-- Dynamic Content Injected JS -->
+                        </tbody>
+                        <tfoot>
+                            <tr id="tableFooter" class="bg-slate-900 text-white font-bold text-xs border-t-2 border-slate-800">
+                                <!-- Footer Summaries -->
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- HISTORY LOG TAB VIEW -->
+        <div id="tabViewHistory" class="hidden space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
+                <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-indigo-600"></i> Audit History of Logged Leaves & Remarks
+                </h2>
+                <button onclick="clearHistoryLogs()" class="text-xs text-rose-600 hover:text-rose-800 font-medium px-2.5 py-1 rounded border border-rose-200 hover:bg-rose-50 transition">
+                    Clear History Logs
+                </button>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-800 text-white uppercase text-[10px] tracking-wider">
+                            <tr>
+                                <th class="p-3">Timestamp</th>
+                                <th class="p-3">Employee</th>
+                                <th class="p-3">Leave Type</th>
+                                <th class="p-3 text-center">Days Used</th>
+                                <th class="p-3">Leave Period / Date</th>
+                                <th class="p-3">Reason / Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody" class="divide-y divide-slate-200 text-slate-700">
+                            <!-- Dynamic History Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- RIGHT EDIT SIDE PANEL / DRAWER -->
+    <div id="editSideBackdrop" onclick="closeEditSidePanel()" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 hidden transition-opacity opacity-0"></div>
+
+    <aside id="editSidePanel" class="fixed top-0 right-0 h-full w-full max-w-md bg-white z-50 shadow-2xl flex flex-col transform translate-x-full drawer-slide">
+        
+        <!-- Drawer Header -->
+        <div class="bg-slate-900 text-white px-5 py-4 flex justify-between items-center border-b border-slate-800">
+            <div>
+                <span class="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Leave Credit Editor</span>
+                <h3 id="drawerEmpName" class="text-base font-bold text-white line-clamp-1">Employee Name</h3>
+                <p id="drawerEmpId" class="text-xs text-slate-400">ID: ----</p>
+            </div>
+            <button onclick="closeEditSidePanel()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Drawer Content Body -->
+        <div class="p-5 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+            
+            <!-- Quick Balance Summary Cards -->
+            <div class="grid grid-cols-3 gap-2">
+                <div class="bg-emerald-50 border border-emerald-200 p-2.5 rounded-lg text-center">
+                    <span class="text-[10px] font-bold uppercase text-emerald-700">VL Credits</span>
+                    <div id="drawerVlBal" class="text-lg font-bold text-emerald-800">0</div>
+                    <span id="drawerVlUsed" class="text-[10px] text-emerald-600">Used: 0</span>
+                </div>
+                <div class="bg-amber-50 border border-amber-200 p-2.5 rounded-lg text-center">
+                    <span class="text-[10px] font-bold uppercase text-amber-700">SL Credits</span>
+                    <div id="drawerSlBal" class="text-lg font-bold text-amber-800">0</div>
+                    <span id="drawerSlUsed" class="text-[10px] text-amber-600">Used: 0</span>
+                </div>
+                <div class="bg-rose-50 border border-rose-200 p-2.5 rounded-lg text-center">
+                    <span class="text-[10px] font-bold uppercase text-rose-700">EL Credits</span>
+                    <div id="drawerElBal" class="text-lg font-bold text-rose-800">0</div>
+                    <span id="drawerElUsed" class="text-[10px] text-rose-600">Used: 0</span>
+                </div>
+            </div>
+
+            <!-- SECTION 1: Quick Adjust Increment/Decrement Count -->
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                    <i class="fa-solid fa-sliders text-indigo-600"></i> Direct Count Adjuster
+                </h4>
+                <p class="text-[11px] text-slate-500">Quickly add or deduct total leave count without full entry log.</p>
+
+                <div class="space-y-2 pt-1">
+                    <!-- VL Control -->
+                    <div class="flex items-center justify-between bg-white p-2 border border-slate-200 rounded-lg">
+                        <span class="text-xs font-bold text-emerald-800">Vacation Leave (VL)</span>
+                        <div class="flex items-center gap-1">
+                            <button onclick="quickAdjustCount('vl', -0.5)" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded text-xs">-0.5</button>
+                            <button onclick="quickAdjustCount('vl', 0.5)" class="px-2 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold rounded text-xs">+0.5</button>
+                            <button onclick="quickAdjustCount('vl', 1.0)" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-xs">+1.0</button>
+                        </div>
+                    </div>
+
+                    <!-- SL Control -->
+                    <div class="flex items-center justify-between bg-white p-2 border border-slate-200 rounded-lg">
+                        <span class="text-xs font-bold text-amber-800">Sick Leave (SL)</span>
+                        <div class="flex items-center gap-1">
+                            <button onclick="quickAdjustCount('sl', -0.5)" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded text-xs">-0.5</button>
+                            <button onclick="quickAdjustCount('sl', 0.5)" class="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold rounded text-xs">+0.5</button>
+                            <button onclick="quickAdjustCount('sl', 1.0)" class="px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded text-xs">+1.0</button>
+                        </div>
+                    </div>
+
+                    <!-- EL Control -->
+                    <div class="flex items-center justify-between bg-white p-2 border border-slate-200 rounded-lg">
+                        <span class="text-xs font-bold text-rose-800">Emergency Leave (EL)</span>
+                        <div class="flex items-center gap-1">
+                            <button onclick="quickAdjustCount('el', -0.5)" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded text-xs">-0.5</button>
+                            <button onclick="quickAdjustCount('el', 0.5)" class="px-2 py-1 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold rounded text-xs">+0.5</button>
+                            <button onclick="quickAdjustCount('el', 1.0)" class="px-2 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded text-xs">+1.0</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: Form Log Detailed Leave Entry with Mandatory Remarks -->
+            <form id="drawerLogForm" onsubmit="handleDrawerLogLeave(event)" class="border border-indigo-100 bg-indigo-50/40 rounded-xl p-4 space-y-4">
+                <h4 class="text-xs font-bold text-indigo-950 uppercase tracking-wide flex items-center gap-1.5">
+                    <i class="fa-solid fa-pen-to-square text-indigo-600"></i> Add Detailed Leave Record
+                </h4>
+
+                <!-- Leave Type Selection -->
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">Leave Type <span class="text-rose-500">*</span></label>
+                    <select id="drawerLeaveType" required class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="vl">Vacation Leave (VL)</option>
+                        <option value="sl">Sick Leave (SL)</option>
+                        <option value="el">Emergency Leave (EL)</option>
+                    </select>
+                </div>
+
+                <!-- Count of Use -->
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">Days Used <span class="text-rose-500">*</span></label>
+                        <input type="number" id="drawerLeaveDays" step="0.5" min="0.5" max="6" value="1.0" required class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">Leave Date / Period</label>
+                        <input type="date" id="drawerLeaveDate" class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- Quick Preset Reason Pills -->
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">Quick Select Category</label>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button type="button" onclick="setReasonPreset('Medical Consultation / Doctor Appointment')" class="px-2 py-1 text-[10px] bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 rounded">Medical</button>
+                        <button type="button" onclick="setReasonPreset('Personal / Family Emergency')" class="px-2 py-1 text-[10px] bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 rounded">Family Emergency</button>
+                        <button type="button" onclick="setReasonPreset('Planned Personal Vacation')" class="px-2 py-1 text-[10px] bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 rounded">Vacation</button>
+                        <button type="button" onclick="setReasonPreset('Rest & Recovery / Fever')" class="px-2 py-1 text-[10px] bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 rounded">Illness</button>
+                    </div>
+                </div>
+
+                <!-- Remarks / Reason Text Input (Mandatory) -->
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                        Reason / Remarks <span class="text-rose-500">*</span>
+                    </label>
+                    <textarea id="drawerLeaveRemarks" rows="2" required placeholder="Specify reason for leave request..." class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                </div>
+
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-2.5 rounded-lg shadow-sm transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-plus-circle"></i> Save Leave Record & Deduct Balance
+                </button>
+            </form>
+
+            <!-- Employee Specific Leave History -->
+            <div>
+                <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                    <i class="fa-solid fa-clock-rotate-left text-slate-500"></i> Employee Leave Log History
+                </h4>
+                <div id="drawerHistoryList" class="space-y-2 text-xs">
+                    <!-- Injected History Items -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Drawer Footer -->
+        <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+            <button onclick="closeEditSidePanel()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-lg transition">
+                Close Drawer
+            </button>
+        </div>
+    </aside>
+
+    <!-- Modal: Add New Employee -->
+    <div id="addEmployeeModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 border border-slate-200">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                <h3 class="text-base font-bold text-slate-800">Add Employee to Roster</h3>
+                <button onclick="closeAddEmployeeModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="addEmployeeForm" onsubmit="handleAddEmployee(event)" class="mt-4 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Employee Number (EMP NO)</label>
+                    <input type="text" id="newEmpId" required placeholder="e.g. 5088" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Full Name & Role Tag</label>
+                    <input type="text" id="newEmpName" placeholder="e.g. DOE, JOHN (LEAD)" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Role Highlight Tag</label>
+                    <select id="newEmpRole" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="NORMAL">Standard Support</option>
+                        <option value="LEAD">Lead (Lime Green)</option>
+                        <option value="LOT">LOT (Indigo/Blue)</option>
+                        <option value="SUPERVISOR">Supervisor (Dark Emerald)</option>
+                        <option value="WORKFORCE">Workforce Lead (Cyan)</option>
+                        <option value="TRAINEE">Trainee (Orange)</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeAddEmployeeModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-xs font-semibold hover:bg-slate-50">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-sm">Add Employee</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application Script Logic -->
+    <script>
+        // Initial spreadsheet dataset restored accurately from image
+        const INITIAL_EMPLOYEES = [
+            { id: "4388", name: "ALMONTE, ANTONIETTE JESSICA PASCUA", role: "NORMAL", vl_max: 6, vl_used: 1, sl_max: 6, sl_used: 2, el_max: 5, el_used: 3 },
+            { id: "4001", name: "AQUI, EXSON NAVARRO (LEAD)", role: "LEAD", vl_max: 6, vl_used: 3, sl_max: 6, sl_used: 4, el_max: 5, el_used: 4 },
+            { id: "4281", name: "AYDALLA, JAIRON NESUS", role: "NORMAL", vl_max: 6, vl_used: 1, sl_max: 6, sl_used: 1, el_max: 5, el_used: 5 },
+            { id: "4456", name: "BANTON, JONATHAN MENDEZ (LOT)", role: "LOT", vl_max: 6, vl_used: 2, sl_max: 6, sl_used: 4, el_max: 5, el_used: 5 },
+            { id: "4818", name: "BASIJAN, ALFREDO - 4/6/2026", role: "NORMAL", vl_max: 6, vl_used: 0, sl_max: 6, sl_used: 0, el_max: 5, el_used: 0 },
+            { id: "4677", name: "DACILLO, FREDERICK JOHN MADAGMOS - 1/1/26", role: "HIGHLIGHT", vl_max: 6, vl_used: 4, sl_max: 6, sl_used: 1, el_max: 5, el_used: 5 },
+            { id: "4836", name: "ESTOLLOSO MARCO, CAWALING - 4/20/2026", role: "NORMAL", vl_max: 6, vl_used: 0, sl_max: 6, sl_used: 0, el_max: 5, el_used: 2 },
+            { id: "4838", name: "MIGUEL MARK GLEN S. - 4/20/2026", role: "NORMAL", vl_max: 6, vl_used: 0, sl_max: 6, sl_used: 0, el_max: 5, el_used: 3 },
+            { id: "4048", name: "HUYOT, KEVIN GANITNET (LEAD)", role: "LEAD", vl_max: 6, vl_used: 4, sl_max: 6, sl_used: 4, el_max: 5, el_used: 5 },
+            { id: "4817", name: "NUNEZ, MARLOU - 4/6/2026", role: "NORMAL", vl_max: 6, vl_used: 0, sl_max: 6, sl_used: 0, el_max: 5, el_used: 2 },
+            { id: "4171", name: "OCHATE, MARCO AARON OLIVEROS", role: "NORMAL", vl_max: 6, vl_used: 4, sl_max: 6, sl_used: 0, el_max: 5, el_used: 4 },
+            { id: "4487", name: "OGARO, DOMINIC CHARLES (LOT)", role: "LOT", vl_max: 6, vl_used: 3, sl_max: 6, sl_used: 3, el_max: 5, el_used: 5 },
+            { id: "4739", name: "ROYO, VINCEN PAUL LARA - 2/26/2026", role: "NORMAL", vl_max: 6, vl_used: 3, sl_max: 6, sl_used: 0, el_max: 5, el_used: 5 },
+            { id: "4181", name: "SATINGASIN, EDGAR PASAYLO JR.", role: "NORMAL", vl_max: 6, vl_used: 0, sl_max: 6, sl_used: 0, el_max: 5, el_used: 3 },
+            { id: "4765", name: "SEGAYA, JAKLYN - 3/1/2026", role: "NORMAL", vl_max: 6, vl_used: 2, sl_max: 6, sl_used: 3, el_max: 5, el_used: 5 },
+            { id: "4772", name: "VELASCO, JOHN REY CASTAÑAS - 3/1/2026", role: "NORMAL", vl_max: 6, vl_used: 3, sl_max: 6, sl_used: 0, el_max: 5, el_used: 3 },
+            { id: "4029", name: "BARREDO, ROCEL ANN BALAGOSA (TECHNICAL SUPPORT SUPERVISOR)", role: "SUPERVISOR", vl_max: 6, vl_used: 0, sl_max: 6, sl_used: 0, el_max: 5, el_used: 3.5 },
+            { id: "4277", name: "LABAGNOY, SELENA GABRIELLE (WORKFORCE LEAD)", role: "WORKFORCE", vl_max: 6, vl_used: 4, sl_max: 6, sl_used: 2, el_max: 5, el_used: 5 },
+            { id: "4400", name: "ESPINO, AIRA MICHAELA TALLA", role: "NORMAL", vl_max: 6, vl_used: 1, sl_max: 6, sl_used: 2.5, el_max: 5, el_used: 5 },
+            { id: "4756", name: "AQUINO, JERIZA MAYONTE", role: "NORMAL", vl_max: 6, vl_used: 0, sl_max: 6, sl_used: 0, el_max: 5, el_used: 1 },
+            { id: "4975", name: "DIAZ, REGINE BAYAS (TRAINEE)", role: "TRAINEE", vl_max: 6, vl_used: 0, sl_max: 6, sl_used: 0, el_max: 5, el_used: 0 },
+            { id: "4489", name: "ESPANA, ELLA MAE SIA (TRAINEE)", role: "TRAINEE", vl_max: 6, vl_used: 0, sl_max: 6, sl_used: 0, el_max: 5, el_used: 0 },
+            { id: "5075", name: "HABILIN, GARL ADRIANNE ALMOGUERA (TRAINEE)", role: "TRAINEE", vl_max: 6, vl_used: 0, sl_max: 6, sl_used: 0, el_max: 5, el_used: 0 }
+        ];
+
+        let employees = [];
+        let historyLogs = [];
+        let currentEditingEmpId = null;
+
+        const roleStyles = {
+            LEAD: "bg-lime-200 text-slate-900 border-l-4 border-lime-500",
+            LOT: "bg-indigo-100 text-indigo-900 border-l-4 border-indigo-400",
+            SUPERVISOR: "bg-emerald-800 text-white border-l-4 border-emerald-950",
+            WORKFORCE: "bg-sky-300 text-slate-900 font-bold border-l-4 border-sky-600",
+            TRAINEE: "bg-orange-100 text-orange-900 border-l-4 border-orange-400",
+            HIGHLIGHT: "bg-amber-100 text-slate-900 border-l-4 border-amber-400",
+            NORMAL: "bg-white text-slate-800 hover:bg-slate-50 border-l-4 border-transparent"
+        };
+
+        // App Initialization
+        function initApp() {
+            const savedEmp = localStorage.getItem('leave_tracker_data_v2');
+            const savedLogs = localStorage.getItem('leave_tracker_history_v2');
+
+            if (savedEmp) {
+                try { employees = JSON.parse(savedEmp); } catch(e) { employees = [...INITIAL_EMPLOYEES]; }
+            } else {
+                employees = [...INITIAL_EMPLOYEES];
+            }
+
+            if (savedLogs) {
+                try { historyLogs = JSON.parse(savedLogs); } catch(e) { historyLogs = []; }
+            }
+
+            // Set default date picker to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('drawerLeaveDate').value = today;
+
+            renderTable();
+            renderHistoryTable();
+        }
+
+        function saveData() {
+            localStorage.setItem('leave_tracker_data_v2', JSON.stringify(employees));
+            localStorage.setItem('leave_tracker_history_v2', JSON.stringify(historyLogs));
+        }
+
+        function resetData() {
+            if (confirm("Reset data back to the default values from spreadsheet image?")) {
+                employees = JSON.parse(JSON.stringify(INITIAL_EMPLOYEES));
+                historyLogs = [];
+                saveData();
+                renderTable();
+                renderHistoryTable();
+            }
+        }
+
+        // Main Table Rendering
+        function renderTable() {
+            const tbody = document.getElementById('employeeTableBody');
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const roleVal = document.getElementById('roleFilter').value;
+            tbody.innerHTML = '';
+
+            let filtered = employees.filter(emp => {
+                const matchesSearch = emp.name.toLowerCase().includes(searchVal) || emp.id.toLowerCase().includes(searchVal);
+                const matchesRole = (roleVal === 'ALL') || (emp.role === roleVal);
+                return matchesSearch && matchesRole;
+            });
+
+            let sumVlUsed = 0, sumVlMax = 0;
+            let sumSlUsed = 0, sumSlMax = 0;
+            let sumElUsed = 0, sumElMax = 0;
+
+            filtered.forEach(emp => {
+                const vlBal = Math.max(0, emp.vl_max - emp.vl_used);
+                const slBal = Math.max(0, emp.sl_max - emp.sl_used);
+                const elBal = Math.max(0, emp.el_max - emp.el_used);
+
+                sumVlUsed += emp.vl_used;
+                sumVlMax += emp.vl_max;
+                sumSlUsed += emp.sl_used;
+                sumSlMax += emp.sl_max;
+                sumElUsed += emp.el_used;
+                sumElMax += emp.el_max;
+
+                const tr = document.createElement('tr');
+                tr.className = `border-b border-slate-200 text-xs transition ${roleStyles[emp.role] || roleStyles.NORMAL}`;
+
+                const elDepletedClass = elBal === 0 ? 'bg-rose-600 text-white font-bold' : '';
+
+                tr.innerHTML = `
+                    <td class="p-3 text-center font-mono font-bold">${emp.id}</td>
+                    <td class="p-3 font-semibold">${emp.name}</td>
+                    
+                    <!-- VL Used & Balance -->
+                    <td class="p-3 text-center border-l border-slate-200/60 bg-white/40">${emp.vl_used}</td>
+                    <td class="p-3 text-center font-bold bg-emerald-50/80 text-emerald-900">${vlBal}</td>
+
+                    <!-- SL Used & Balance -->
+                    <td class="p-3 text-center border-l border-slate-200/60 bg-white/40">${emp.sl_used}</td>
+                    <td class="p-3 text-center font-bold bg-amber-50/80 text-amber-900">${slBal}</td>
+
+                    <!-- EL Used & Balance -->
+                    <td class="p-3 text-center border-l border-slate-200/60 bg-white/40">${emp.el_used}</td>
+                    <td class="p-3 text-center font-bold ${elDepletedClass || 'bg-rose-50/80 text-rose-900'}">${elBal}</td>
+
+                    <!-- Action Edit Button -->
+                    <td class="p-2 text-center">
+                        <button onclick="openEditSidePanel('${emp.id}')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold px-2.5 py-1 rounded shadow-xs transition flex items-center justify-center gap-1 mx-auto">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Update Header Stats
+            document.getElementById('stat-total-emp').innerText = filtered.length;
+            document.getElementById('stat-vl-total').innerText = `${sumVlUsed} / ${sumVlMax}`;
+            document.getElementById('stat-vl-bal').innerText = `${sumVlMax - sumVlUsed}`;
+            
+            document.getElementById('stat-sl-total').innerText = `${sumSlUsed} / ${sumSlMax}`;
+            document.getElementById('stat-sl-bal').innerText = `${sumSlMax - sumSlUsed}`;
+            
+            document.getElementById('stat-el-total').innerText = `${sumElUsed} / ${sumElMax}`;
+            document.getElementById('stat-el-bal').innerText = `${sumElMax - sumElUsed}`;
+
+            // Render Table Footer Summary
+            const tfoot = document.getElementById('tableFooter');
+            tfoot.innerHTML = `
+                <td colspan="2" class="p-3 text-right font-bold uppercase tracking-wider">TOTAL LEAVE USAGE:</td>
+                <td class="p-3 text-center bg-emerald-950">${sumVlUsed}</td>
+                <td class="p-3 text-center bg-emerald-900">${sumVlMax - sumVlUsed}</td>
+                <td class="p-3 text-center bg-amber-950">${sumSlUsed}</td>
+                <td class="p-3 text-center bg-amber-900">${sumSlMax - sumSlUsed}</td>
+                <td class="p-3 text-center bg-rose-950">${sumElUsed}</td>
+                <td class="p-3 text-center bg-rose-900">${sumElMax - sumElUsed}</td>
+                <td></td>
+            `;
+        }
+
+        // Side Edit Drawer Controls
+        function openEditSidePanel(empId) {
+            currentEditingEmpId = empId;
+            const emp = employees.find(e => e.id === empId);
+            if (!emp) return;
+
+            document.getElementById('drawerEmpName').innerText = emp.name;
+            document.getElementById('drawerEmpId').innerText = `EMP NO: ${emp.id}`;
+
+            updateDrawerStats(emp);
+            renderDrawerHistory(emp.id);
+
+            // Open animations
+            const backdrop = document.getElementById('editSideBackdrop');
+            const drawer = document.getElementById('editSidePanel');
+            
+            backdrop.classList.remove('hidden');
+            setTimeout(() => {
+                backdrop.classList.add('opacity-100');
+                backdrop.classList.remove('opacity-0');
+                drawer.classList.remove('translate-x-full');
+            }, 10);
+        }
+
+        function closeEditSidePanel() {
+            const backdrop = document.getElementById('editSideBackdrop');
+            const drawer = document.getElementById('editSidePanel');
+
+            drawer.classList.add('translate-x-full');
+            backdrop.classList.add('opacity-0');
+            backdrop.classList.remove('opacity-100');
+
+            setTimeout(() => {
+                backdrop.classList.add('hidden');
+                currentEditingEmpId = null;
+            }, 300);
+        }
+
+        function updateDrawerStats(emp) {
+            const vlBal = Math.max(0, emp.vl_max - emp.vl_used);
+            const slBal = Math.max(0, emp.sl_max - emp.sl_used);
+            const elBal = Math.max(0, emp.el_max - emp.el_used);
+
+            document.getElementById('drawerVlBal').innerText = vlBal;
+            document.getElementById('drawerVlUsed').innerText = `Used: ${emp.vl_used}`;
+
+            document.getElementById('drawerSlBal').innerText = slBal;
+            document.getElementById('drawerSlUsed').innerText = `Used: ${emp.sl_used}`;
+
+            document.getElementById('drawerElBal').innerText = elBal;
+            document.getElementById('drawerElUsed').innerText = `Used: ${emp.el_used}`;
+        }
+
+        // Direct Quick Adjustment
+        function quickAdjustCount(type, delta) {
+            if (!currentEditingEmpId) return;
+            const emp = employees.find(e => e.id === currentEditingEmpId);
+            if (!emp) return;
+
+            if (type === 'vl') emp.vl_used = Math.max(0, emp.vl_used + delta);
+            if (type === 'sl') emp.sl_used = Math.max(0, emp.sl_used + delta);
+            if (type === 'el') emp.el_used = Math.max(0, emp.el_used + delta);
+
+            // Add auto log for quick increment/decrement
+            historyLogs.unshift({
+                timestamp: new Date().toLocaleString(),
+                empId: emp.id,
+                empName: emp.name,
+                type: type.toUpperCase(),
+                days: delta,
+                leaveDate: new Date().toISOString().split('T')[0],
+                remarks: `Direct counter adjusted (${delta > 0 ? '+' : ''}${delta})`
+            });
+
+            saveData();
+            updateDrawerStats(emp);
+            renderTable();
+            renderDrawerHistory(emp.id);
+            renderHistoryTable();
+        }
+
+        function setReasonPreset(text) {
+            document.getElementById('drawerLeaveRemarks').value = text;
+        }
+
+        // Detailed Form Submission
+        function handleDrawerLogLeave(e) {
+            e.preventDefault();
+            if (!currentEditingEmpId) return;
+
+            const emp = employees.find(e => e.id === currentEditingEmpId);
+            if (!emp) return;
+
+            const leaveType = document.getElementById('drawerLeaveType').value;
+            const days = parseFloat(document.getElementById('drawerLeaveDays').value);
+            const leaveDate = document.getElementById('drawerLeaveDate').value || new Date().toISOString().split('T')[0];
+            const remarks = document.getElementById('drawerLeaveRemarks').value.trim();
+
+            if (leaveType === 'vl') emp.vl_used += days;
+            if (leaveType === 'sl') emp.sl_used += days;
+            if (leaveType === 'el') emp.el_used += days;
+
+            // Save record in history logs
+            historyLogs.unshift({
+                timestamp: new Date().toLocaleString(),
+                empId: emp.id,
+                empName: emp.name,
+                type: leaveType.toUpperCase(),
+                days: days,
+                leaveDate: leaveDate,
+                remarks: remarks
+            });
+
+            saveData();
+            updateDrawerStats(emp);
+            renderTable();
+            renderDrawerHistory(emp.id);
+            renderHistoryTable();
+
+            // Reset remarks field
+            document.getElementById('drawerLeaveRemarks').value = '';
+        }
+
+        function renderDrawerHistory(empId) {
+            const container = document.getElementById('drawerHistoryList');
+            container.innerHTML = '';
+
+            const logs = historyLogs.filter(l => l.empId === empId);
+
+            if (logs.length === 0) {
+                container.innerHTML = `<p class="text-slate-400 italic text-[11px]">No logged remarks found for this employee.</p>`;
+                return;
+            }
+
+            logs.forEach(log => {
+                const badgeColor = log.type === 'VL' ? 'bg-emerald-100 text-emerald-800' : log.type === 'SL' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800';
+                
+                const card = document.createElement('div');
+                card.className = "bg-white border border-slate-200 rounded-lg p-2.5 shadow-2xs space-y-1";
+                card.innerHTML = `
+                    <div class="flex justify-between items-center text-[10px]">
+                        <span class="font-bold px-1.5 py-0.5 rounded ${badgeColor}">${log.type} (${log.days > 0 ? '+' : ''}${log.days} day)</span>
+                        <span class="text-slate-400">${log.leaveDate || log.timestamp}</span>
+                    </div>
+                    <p class="text-xs text-slate-800 font-medium mt-1">${log.remarks}</p>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Global Audit History Table
+        function renderHistoryTable() {
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '';
+
+            if (historyLogs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400 italic">No historical leave logs found.</td></tr>`;
+                return;
+            }
+
+            historyLogs.forEach(log => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 border-b border-slate-200";
+                
+                const badgeColor = log.type === 'VL' ? 'bg-emerald-100 text-emerald-800' : log.type === 'SL' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800';
+
+                tr.innerHTML = `
+                    <td class="p-3 text-slate-400 font-mono text-[11px]">${log.timestamp}</td>
+                    <td class="p-3 font-semibold text-slate-800">${log.empName} (${log.empId})</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded font-bold text-[10px] ${badgeColor}">${log.type}</span></td>
+                    <td class="p-3 text-center font-bold">${log.days}</td>
+                    <td class="p-3 text-slate-600">${log.leaveDate || '-'}</td>
+                    <td class="p-3 text-slate-700">${log.remarks}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function clearHistoryLogs() {
+            if (confirm("Clear all recorded history logs?")) {
+                historyLogs = [];
+                saveData();
+                renderHistoryTable();
+                if (currentEditingEmpId) renderDrawerHistory(currentEditingEmpId);
+            }
+        }
+
+        // Tab Switching Logic
+        function switchTab(tab) {
+            const trackerTab = document.getElementById('tabViewTracker');
+            const historyTab = document.getElementById('tabViewHistory');
+            const btnTracker = document.getElementById('btnTabTracker');
+            const btnHistory = document.getElementById('btnTabHistory');
+
+            if (tab === 'tracker') {
+                trackerTab.classList.remove('hidden');
+                historyTab.classList.add('hidden');
+                btnTracker.className = "px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-indigo-600 text-white shadow-sm flex items-center gap-2 transition";
+                btnHistory.className = "px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 flex items-center gap-2 transition";
+            } else {
+                trackerTab.classList.add('hidden');
+                historyTab.classList.remove('hidden');
+                btnHistory.className = "px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-indigo-600 text-white shadow-sm flex items-center gap-2 transition";
+                btnTracker.className = "px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 flex items-center gap-2 transition";
+            }
+        }
+
+        // Add Employee Modal
+        function openAddEmployeeModal() {
+            document.getElementById('addEmployeeModal').classList.remove('hidden');
+        }
+        function closeAddEmployeeModal() {
+            document.getElementById('addEmployeeModal').classList.add('hidden');
+            document.getElementById('addEmployeeForm').reset();
+        }
+
+        function handleAddEmployee(e) {
+            e.preventDefault();
+            const id = document.getElementById('newEmpId').value.trim();
+            const name = document.getElementById('newEmpName').value.trim();
+            const role = document.getElementById('newEmpRole').value;
+
+            if (employees.some(emp => emp.id === id)) {
+                alert("Employee ID already exists in system!");
+                return;
+            }
+
+            employees.push({
+                id,
+                name,
+                role,
+                vl_max: 6,
+                vl_used: 0,
+                sl_max: 6,
+                sl_used: 0,
+                el_max: 5,
+                el_used: 0
+            });
+
+            saveData();
+            renderTable();
+            closeAddEmployeeModal();
+        }
+
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
